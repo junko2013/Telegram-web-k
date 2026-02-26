@@ -11,7 +11,6 @@
 
 import {TLSerialization} from '@lib/mtproto/tl_utils';
 import cryptoWorker from '@lib/crypto/cryptoMessagePort';
-import Modes from '@config/modes';
 import bytesFromHex from '@helpers/bytes/bytesFromHex';
 import bytesToHex from '@helpers/bytes/bytesToHex';
 import bigInt from 'big-integer';
@@ -23,28 +22,8 @@ export type RSAPublicKeyHex = {
 
 export class RSAKeysManager {
   /**
-   *  Server public key, obtained from here: https://core.telegram.org/api/obtaining_api_id
-   *
-   *
-   *  -----BEGIN RSA PUBLIC KEY-----
-   *  MIIBCgKCAQEA6LszBcC1LGzyr992NzE0ieY+BSaOW622Aa9Bd4ZHLl+TuFQ4lo4g
-   *  5nKaMBwK/BIb9xUfg0Q29/2mgIR6Zr9krM7HjuIcCzFvDtr+L0GQjae9H0pRB2OO
-   *  62cECs5HKhT5DZ98K33vmWiLowc621dQuwKWSQKjWf50XYFw42h21P2KXUGyp2y/
-   *  +aEyZ+uVgLLQbRA1dEjSDZ2iGRy12Mk5gpYc397aYp438fsJoHIgJ2lgMv5h7WY9
-   *  t6N/byY9Nw9p21Og3AoXSL2q/2IJ1WRUhebgAdGVMlV1fkuOQoEzR7EdpqtQD9Cs
-   *  5+bfo3Nhmcyvk5ftB0WkJ9z6bNZ7yxrP8wIDAQAB
-   *  -----END RSA PUBLIC KEY-----
-   *
-   *  -----BEGIN RSA PUBLIC KEY-----
-   *  MIIBCgKCAQEBadMIUYSKhyznMh+Pg+OxTLyDZrWEjQIPZC3oJCtuZX7qUxgcWqFX
-   *  Q1952TSY8S8NYuz12sK9Fvp+lil1hIG0U/cuPsK08VB1hB4VA+p0S46fGwVsRovq
-   *  4qUiUIzQSjSHDASuXTOinlYEHwmg/GaLc5G7qhePWa0p9YmqYR5Ha3xHJywcXZrn
-   *  yE3nC9igL96Aanqv+Prbu1N+r9vAgZeHh9cfbtbV8WWwruOANOTEv2ctQLR0dfr9
-   *  MwQXNePTPQlYsO9HNIGS1LWe7hZFtGBAVJH92F7Kig68WqHM3PIZ6Sq7N0VSzfzL
-   *  b11Z/YHz2UXYtXADwL/m5pTpKBUtJBXkOQIDAQAB
-   *  -----END RSA PUBLIC KEY-----
-   *
-   * Bytes can be got via
+   *  Self-hosted server RSA key.
+   *  Bytes can be got via
    * $ openssl rsa -in rsa.pem -RSAPublicKey_in -pubout > pub.pem
    * $ openssl rsa -pubin -in pub.pem -text -noout
    */
@@ -66,14 +45,8 @@ export class RSAKeysManager {
     exponent: '010001'
   }]; */
 
-  private testPublicKeysHex: RSAPublicKeyHex[] = [{
-    modulus: 'c8c11d635691fac091dd9489aedced2932aa8a0bcefef05fa800892d9b52ed03200865c9e97211cb2ee6c7ae96d3fb0e15aeffd66019b44a08a240cfdd2868a85e1f54d6fa5deaa041f6941ddf302690d61dc476385c2fa655142353cb4e4b59f6e5b6584db76fe8b1370263246c010c93d011014113ebdf987d093f9d37c2be48352d69a1683f8f6e6c2167983c761e3ab169fde5daaa12123fa1beab621e4da5935e9c198f82f35eae583a99386d8110ea6bd1abb0f568759f62694419ea5f69847c43462abef858b4cb5edc84e7b9226cd7bd7e183aa974a712c079dde85b9dc063b8a5c08e8f859c0ee5dcd824c7807f20153361a7f63cfd2a433a1be7f5',
-    exponent: '010001'
-  }];
-
   private publisKeysHex: RSAPublicKeyHex[] = [{
-    // modulus: '00e8bb3305c0b52c6cf2afdf7637313489e63e05268e5badb601af417786472e5f93b85438968e20e6729a301c0afc121bf7151f834436f7fda680847a66bf64accec78ee21c0b316f0edafe2f41908da7bd1f4a5107638eeb67040ace472a14f90d9f7c2b7def99688ba3073adb5750bb02964902a359fe745d8170e36876d4fd8a5d41b2a76cbff9a13267eb9580b2d06d10357448d20d9da2191cb5d8c93982961cdfdeda629e37f1fb09a0722027696032fe61ed663db7a37f6f263d370f69db53a0dc0a1748bdaaff6209d5645485e6e001d1953255757e4b8e42813347b11da6ab500fd0ace7e6dfa3736199ccaf9397ed0745a427dcfa6cd67bcb1acff3',
-    modulus: 'e8bb3305c0b52c6cf2afdf7637313489e63e05268e5badb601af417786472e5f93b85438968e20e6729a301c0afc121bf7151f834436f7fda680847a66bf64accec78ee21c0b316f0edafe2f41908da7bd1f4a5107638eeb67040ace472a14f90d9f7c2b7def99688ba3073adb5750bb02964902a359fe745d8170e36876d4fd8a5d41b2a76cbff9a13267eb9580b2d06d10357448d20d9da2191cb5d8c93982961cdfdeda629e37f1fb09a0722027696032fe61ed663db7a37f6f263d370f69db53a0dc0a1748bdaaff6209d5645485e6e001d1953255757e4b8e42813347b11da6ab500fd0ace7e6dfa3736199ccaf9397ed0745a427dcfa6cd67bcb1acff3',
+    modulus: 'cb76c345a8bbef8d4b350555f657c97f6f1ea3df590f3627681b2b7f55be5dbb5b6544a489b31b0ff3f15d29f16f846f562fa6413c3bc521563b4bd5bce152c1712ac33c7ffaaef751aa76e233c4179e5a798e8e3c180e15bdb0bdb74261959d8d2cce53b66b8cd6ee0ab06bc65b75ca81a1f5f0f2321342c4db701c2b5e2cd9674772e96952d4187b3f8ee1cd1798c29f6073e5accecb4930a5b80f4ed0d2b9815e1f610bcc27a5db5793d3e4c5ef82ae314fade54b4a77b3a66b46384df653d2d2d0ee7a15a2b4356e5516882372f501b269f2c8da3c97709ebff5fdeba5469dd5c626233ece1def4882665a464ea3bb8e6fc137094051cb4612acf300ebf5',
     exponent: '010001'
   }];
 
@@ -83,11 +56,7 @@ export class RSAKeysManager {
   private prepared = false;
   private preparePromise: Promise<void> = null;
 
-  constructor() {
-    if(Modes.test) {
-      this.publisKeysHex = this.testPublicKeysHex;
-    }
-  }
+  constructor() {}
 
   public prepare(): Promise<void> {
     if(this.preparePromise) return this.preparePromise;

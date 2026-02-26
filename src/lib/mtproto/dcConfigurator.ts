@@ -11,9 +11,7 @@
 
 import MTTransport, {MTConnectionConstructable} from '@lib/mtproto/transports/transport';
 import Modes from '@config/modes';
-import App from '@config/app';
 import indexOfAndSplice from '@helpers/array/indexOfAndSplice';
-import HTTP from '@lib/mtproto/transports/http';
 import Socket from '@lib/mtproto/transports/websocket';
 import TcpObfuscated from '@lib/mtproto/transports/tcpObfuscated';
 import {IS_WEB_WORKER} from '@helpers/context';
@@ -31,43 +29,31 @@ type Servers = {
   }
 };
 
-const TEST_SUFFIX = Modes.test ? '_test' : '';
-const PREMIUM_SUFFIX = '_premium';
 const RETRY_TIMEOUT_CLIENT = 3000;
 const RETRY_TIMEOUT_DOWNLOAD = 3000;
+const SELF_HOST = '127.0.0.1';
+const SELF_WS_PORT = 8082;
 
 export function getTelegramConnectionSuffix(connectionType: ConnectionType) {
   return connectionType === 'client' ? '' : '-1';
 }
 
-export function constructTelegramWebSocketUrl(dcId: DcId, connectionType: ConnectionType, premium?: boolean) {
+export function constructTelegramWebSocketUrl(_dcId: DcId, _connectionType: ConnectionType, _premium?: boolean) {
   if(!import.meta.env.VITE_MTPROTO_HAS_WS) {
     return;
   }
 
-  const suffix = getTelegramConnectionSuffix(connectionType);
-  const path = connectionType !== 'client' ? 'apiws' + TEST_SUFFIX + (premium ? PREMIUM_SUFFIX : '') : ('apiws' + TEST_SUFFIX);
-  const chosenServer = `wss://${App.suffix.toLowerCase()}ws${dcId}${suffix}.web.telegram.org/${path}`;
-
-  return chosenServer;
+  return `ws://${SELF_HOST}:${SELF_WS_PORT}`;
 }
 
 export class DcConfigurator {
-  private sslSubdomains = ['pluto', 'venus', 'aurora', 'vesta', 'flora'];
-
-  private dcOptions = Modes.test ?
-    [
-      {id: 1, host: '149.154.175.10',  port: 80},
-      {id: 2, host: '149.154.167.40',  port: 80},
-      {id: 3, host: '149.154.175.117', port: 80}
-    ] :
-    [
-      {id: 1, host: '149.154.175.50',  port: 80},
-      {id: 2, host: '149.154.167.50',  port: 80},
-      {id: 3, host: '149.154.175.100', port: 80},
-      {id: 4, host: '149.154.167.91',  port: 80},
-      {id: 5, host: '149.154.171.5',   port: 80}
-    ];
+  private dcOptions = [
+    {id: 1, host: SELF_HOST, port: SELF_WS_PORT},
+    {id: 2, host: SELF_HOST, port: SELF_WS_PORT},
+    {id: 3, host: SELF_HOST, port: SELF_WS_PORT},
+    {id: 4, host: SELF_HOST, port: SELF_WS_PORT},
+    {id: 5, host: SELF_HOST, port: SELF_WS_PORT}
+  ];
 
   public chosenServers: Servers = {} as any;
 
@@ -92,27 +78,7 @@ export class DcConfigurator {
   };
 
   private transportHTTP = (dcId: DcId, connectionType: ConnectionType, premium?: boolean) => {
-    if(!import.meta.env.VITE_MTPROTO_HAS_HTTP) {
-      return;
-    }
-
-    let chosenServer: string;
-    if(Modes.ssl || !Modes.http) {
-      const suffix = getTelegramConnectionSuffix(connectionType);
-      const subdomain = this.sslSubdomains[dcId - 1] + suffix;
-      const path = Modes.test ? 'apiw_test1' : 'apiw1';
-      chosenServer = 'https://' + subdomain + '.web.telegram.org/' + path;
-    } else {
-      for(const dcOption of this.dcOptions) {
-        if(dcOption.id === dcId) {
-          chosenServer = 'http://' + dcOption.host + (dcOption.port !== 80 ? ':' + dcOption.port : '') + '/apiw1';
-          break;
-        }
-      }
-    }
-
-    const logSuffix = connectionType === 'upload' ? '-U' : connectionType === 'download' ? '-D' : '';
-    return new HTTP(dcId, chosenServer, logSuffix);
+    return this.transportSocket(dcId, connectionType, premium);
   };
 
   public chooseServer(
